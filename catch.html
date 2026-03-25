@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Catch My Hearts 💕 | Permainan Tangkap Hati</title>
+    <style>
+        * {
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: linear-gradient(145deg, #ff9a9e 0%, #fad0c4 100%);
+            font-family: 'Segoe UI', 'Quicksand', system-ui, -apple-system, 'Poppins', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(12px);
+            border-radius: 64px 48px 64px 48px;
+            box-shadow: 0 25px 45px rgba(0,0,0,0.2), inset 0 1px 2px rgba(255,255,255,0.6);
+            padding: 20px 20px 30px;
+            width: 100%;
+            max-width: 550px;
+        }
+
+        .info-panel {
+            background: rgba(255,245,240,0.9);
+            border-radius: 60px;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(4px);
+            font-weight: bold;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.1);
+        }
+
+        .score-box, .timer-box, .target {
+            background: #ffb7c5;
+            padding: 8px 20px;
+            border-radius: 40px;
+            color: #4a1d2c;
+            font-size: 1.2rem;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1), 0 4px 8px rgba(0,0,0,0.05);
+        }
+
+        .score-box span, .timer-box span {
+            font-weight: 800;
+            color: #2d0e17;
+            font-size: 1.8rem;
+            margin-left: 8px;
+        }
+
+        .target strong {
+            font-size: 1.6rem;
+            margin-right: 4px;
+        }
+
+        .game-area {
+            background: #fff0f3;
+            border-radius: 48px;
+            box-shadow: inset 0 0 0 3px white, 0 12px 28px rgba(0,0,0,0.2);
+            position: relative;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #ffe8ed;
+            border-radius: 48px;
+            cursor: pointer;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 18px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            border: none;
+            background: #fff0f0;
+            padding: 12px 28px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 50px;
+            color: #c25b78;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 5px 0 #b2828f;
+            font-family: inherit;
+        }
+
+        .btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #b2828f;
+        }
+
+        .btn-primary {
+            background: #ff6f91;
+            color: white;
+            box-shadow: 0 5px 0 #a73e58;
+        }
+
+        .btn-send {
+            background: #9b59b6;
+            color: white;
+            box-shadow: 0 5px 0 #6c3483;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: 0.2s;
+        }
+
+        .modal.active {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .modal-card {
+            background: #fff5f0;
+            max-width: 320px;
+            width: 80%;
+            border-radius: 56px;
+            padding: 28px 20px 32px;
+            text-align: center;
+            box-shadow: 0 30px 40px rgba(0,0,0,0.3);
+            border: 2px solid #ffbecf;
+        }
+
+        .modal-card h3 {
+            color: #c44569;
+            font-size: 1.8rem;
+            margin: 0 0 12px;
+        }
+
+        .modal-card input {
+            width: 90%;
+            padding: 14px 16px;
+            border-radius: 60px;
+            border: 2px solid #ffb6c7;
+            font-size: 1rem;
+            margin: 20px 0;
+            text-align: center;
+            font-family: inherit;
+        }
+
+        .modal-close {
+            background: #ffb7c5;
+            margin-top: 8px;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 24px;
+            font-size: 0.7rem;
+            color: #a03e56;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <div class="info-panel">
+        <div class="score-box">💖 Skor <span id="scoreValue">0</span></div>
+        <div class="timer-box">⏳ Waktu <span id="timerValue">12</span> dtk</div>
+        <div class="target">🎯 Target <strong>12</strong> hati</div>
+    </div>
+
+    <div class="game-area">
+        <canvas id="gameCanvas" width="500" height="400" style="width:100%; height:auto; max-width:500px; aspect-ratio:500/400"></canvas>
+    </div>
+
+    <div class="button-group">
+        <button class="btn btn-primary" id="startBtn">❤️ Mulai Main!</button>
+        <button class="btn btn-send" id="sendBtn">📨 Kirim ke Dia!</button>
+    </div>
+    <footer>✨ klik / tap pada hati untuk menangkapnya ✨</footer>
+</div>
+
+<div id="sendModal" class="modal">
+    <div class="modal-card">
+        <h3>💌 Kirim Hasil</h3>
+        <p style="margin:0">Skor kamu: <strong id="finalScoreSpan">0</strong> hati</p>
+        <input type="text" id="targetName" placeholder="Nama pacar / gebetan..." autocomplete="off">
+        <button class="btn modal-close" id="confirmSendBtn">✨ Kirim & Bagikan ✨</button>
+        <button class="btn" id="closeModalBtn" style="background:#eee; margin-top:12px;">Tutup</button>
+    </div>
+</div>
+
+<script>
+    (function(){
+        // DOM Elements
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startBtn = document.getElementById('startBtn');
+        const sendBtn = document.getElementById('sendBtn');
+        const scoreSpan = document.getElementById('scoreValue');
+        const timerSpan = document.getElementById('timerValue');
+        const modal = document.getElementById('sendModal');
+        const finalScoreSpan = document.getElementById('finalScoreSpan');
+        const targetNameInput = document.getElementById('targetName');
+        const confirmSendBtn = document.getElementById('confirmSendBtn');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+
+        // Game Variables
+        let score = 0;
+        let timeLeft = 12;
+        let gameActive = false;
+        let animationId = null;
+        let countdownInterval = null;
+        let hearts = [];
+        
+        // Constants
+        const HEART_RADIUS = 22;
+        const MAX_HEARTS = 10;
+        const CANVAS_W = 500;
+        const CANVAS_H = 400;
+        let lastTimestamp = 0;
+        let lastSpawnTime = 0;
+        
+        canvas.width = CANVAS_W;
+        canvas.height = CANVAS_H;
+        
+        // Draw heart function
+        function drawHeart(x, y, size) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(x, y + size * 0.25);
+            ctx.bezierCurveTo(x, y - size * 0.5, x - size * 0.6, y - size * 0.4, x, y);
+            ctx.bezierCurveTo(x + size * 0.6, y - size * 0.4, x, y - size * 0.5, x, y + size * 0.25);
+            ctx.fillStyle = '#ff4d6d';
+            ctx.fill();
+            ctx.fillStyle = '#fff0f5';
+            ctx.beginPath();
+            ctx.arc(x - size*0.2, y - size*0.15, size*0.12, 0, Math.PI*2);
+            ctx.arc(x + size*0.2, y - size*0.15, size*0.12, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = '#3d0a1a';
+            ctx.beginPath();
+            ctx.arc(x - size*0.2, y - size*0.18, size*0.05, 0, Math.PI*2);
+            ctx.arc(x + size*0.2, y - size*0.18, size*0.05, 0, Math.PI*2);
+            ctx.fill();
+            ctx.restore();
+        }
+        
+        // Update heart positions
+        function updateHearts() {
+            for (let i = 0; i < hearts.length; i++) {
+                hearts[i].y += hearts[i].vy;
+                if (hearts[i].y + HEART_RADIUS > CANVAS_H + 50 || hearts[i].y + HEART_RADIUS < -50) {
+                    hearts.splice(i, 1);
+                    i--;
+                }
+            }
+        }
+        
+        // Spawn new heart
+        function spawnHeart() {
+            if (!gameActive) return;
+            if (hearts.length >= MAX_HEARTS) return;
+            
+            const x = 30 + Math.random() * (CANVAS_W - 60);
+            const y = -HEART_RADIUS - Math.random() * 30;
+            const vy = 1.5 + Math.random() * 2;
+            
+            hearts.push({
+                x: x,
+                y: y,
+                vy: vy
+            });
+        }
+        
+        // Handle catch
+        function handleCatch(clientX, clientY) {
+            if (!gameActive) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const canvasX = (clientX - rect.left) * scaleX;
+            const canvasY = (clientY - rect.top) * scaleY;
+            
+            if (canvasX < 0 || canvasX > CANVAS_W || canvasY < 0 || canvasY > CANVAS_H) return;
+            
+            for (let i = hearts.length - 1; i >= 0; i--) {
+                const h = hearts[i];
+                const dx = canvasX - h.x;
+                const dy = canvasY - h.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < HEART_RADIUS) {
+                    hearts.splice(i, 1);
+                    score++;
+                    scoreSpan.innerText = score;
+                    
+                    if (navigator.vibrate) navigator.vibrate(50);
+                    
+                    if (score >= 12 && gameActive) {
+                        endGame(true);
+                    }
+                    break;
+                }
+            }
+        }
+        
+        // End game
+        function endGame(isWin) {
+            if (!gameActive) return;
+            gameActive = false;
+            
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+            }
+            
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            
+            if (isWin) {
+                alert(`❤️ Hebat! Skor akhir: ${score} hati. Target tercapai! ❤️`);
+            } else {
+                alert(`⏰ Waktu habis! Skor kamu: ${score}. Minimal 12 hati untuk menang.`);
+            }
+            
+            drawStaticScene();
+        }
+        
+        // Draw game scene
+        function drawScene() {
+            ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+            ctx.fillStyle = '#ffe8ed';
+            ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+            
+            // Draw all hearts
+            for (let heart of hearts) {
+                drawHeart(heart.x, heart.y, HEART_RADIUS);
+            }
+            
+            // Draw instruction if game not active
+            if (!gameActive && hearts.length === 0) {
+                ctx.font = "bold 18px 'Segoe UI'";
+                ctx.fillStyle = "#c25b78";
+                ctx.textAlign = "center";
+                ctx.fillText("💕 Tekan Mulai Main! 💕", CANVAS_W/2, CANVAS_H/2);
+                ctx.textAlign = "left";
+            }
+        }
+        
+        // Animation loop
+        function animate(currentTime) {
+            if (!gameActive) {
+                return;
+            }
+            
+            // Update hearts position
+            updateHearts();
+            
+            // Spawn hearts based on time
+            if (gameActive && hearts.length < MAX_HEARTS) {
+                if (!lastSpawnTime || currentTime - lastSpawnTime > 400) {
+                    spawnHeart();
+                    lastSpawnTime = currentTime;
+                    // Kadang spawn ekstra biar rame
+                    if (hearts.length < MAX_HEARTS - 1 && Math.random() < 0.3) {
+                        spawnHeart();
+                    }
+                }
+            }
+            
+            // Draw everything
+            drawScene();
+            
+            // Continue animation
+            animationId = requestAnimationFrame(animate);
+        }
+        
+        // Timer function
+        function startTimer() {
+            if (countdownInterval) clearInterval(countdownInterval);
+            
+            countdownInterval = setInterval(() => {
+                if (!gameActive) {
+                    return;
+                }
+                
+                if (timeLeft <= 1) {
+                    clearInterval(countdownInterval);
+                    countdownInterval = null;
+                    if (gameActive) {
+                        if (score >= 12) {
+                            endGame(true);
+                        } else {
+                            endGame(false);
+                        }
+                    }
+                } else {
+                    timeLeft--;
+                    timerSpan.innerText = timeLeft;
+                }
+            }, 1000);
+        }
+        
+        // Reset and start game
+        function startGame() {
+            // Stop current game if running
+            if (gameActive) {
+                gameActive = false;
+                if (countdownInterval) {
+                    clearInterval(countdownInterval);
+                    countdownInterval = null;
+                }
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                    animationId = null;
+                }
+            }
+            
+            // Reset variables
+            score = 0;
+            timeLeft = 12;
+            hearts = [];
+            scoreSpan.innerText = "0";
+            timerSpan.innerText = "12";
+            gameActive = true;
+            lastSpawnTime = 0;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+            ctx.fillStyle = '#ffe8ed';
+            ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+            
+            // Spawn initial hearts
+            for (let i = 0; i < 3; i++) {
+                setTimeout(() => {
+                    if (gameActive) spawnHeart();
+                }, i * 100);
+            }
+            
+            // Start timer and animation
+            startTimer();
+            animationId = requestAnimationFrame(animate);
+        }
+        
+        // Draw static scene (game over state)
+        function drawStaticScene() {
+            ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+            ctx.fillStyle = '#ffe8ed';
+            ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+            
+            for (let heart of hearts) {
+                drawHeart(heart.x, heart.y, HEART_RADIUS);
+            }
+            
+            if (!gameActive && hearts.length === 0) {
+                ctx.font = "bold 18px 'Segoe UI'";
+                ctx.fillStyle = "#c25b78";
+                ctx.textAlign = "center";
+                ctx.fillText("💕 Tekan Mulai Main! 💕", CANVAS_W/2, CANVAS_H/2);
+                ctx.textAlign = "left";
+            }
+        }
+        
+        // Event handlers
+        function setupCanvasEvents() {
+            canvas.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                handleCatch(e.clientX, e.clientY);
+            });
+            
+            canvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                if (touch) handleCatch(touch.clientX, touch.clientY);
+            });
+        }
+        
+        // Modal functions
+        function openModal() {
+            if (gameActive) {
+                alert("Selesaikan permainan dulu atau tekan Mulai ulang untuk mengirim hasil ❤️");
+                return;
+            }
+            finalScoreSpan.innerText = score;
+            targetNameInput.value = "";
+            modal.classList.add('active');
+        }
+        
+        function closeModal() {
+            modal.classList.remove('active');
+        }
+        
+        function sendResult() {
+            let nama = targetNameInput.value.trim();
+            let skorAkhir = score;
+            let pesan = "";
+            
+            if (!nama) nama = "Sayang";
+            
+            if (skorAkhir >= 12) {
+                pesan = `💖 Halo ${nama}! 💖\nAku berhasil menangkap ${skorAkhir} hati dalam game Catch My Hearts! 🎉\nTarget 12 hati tercapai! Kamu benar-benar membuatku semangat! 💕✨`;
+            } else {
+                pesan = `💕 Halo ${nama}, 💕\nSkor aku ${skorAkhir} hati di Catch My Hearts. Belum cukup 12, tapi hatiku tetap untukmu! 💘 lain kali pasti lebih giat! 😘`;
+            }
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Catch My Hearts 💕',
+                    text: pesan,
+                }).catch(() => {
+                    copyToClipboard(pesan);
+                });
+            } else {
+                copyToClipboard(pesan);
+            }
+            closeModal();
+        }
+        
+        function copyToClipboard(pesan) {
+            navigator.clipboard.writeText(pesan).then(() => {
+                alert("💌 Pesan tersalin! Tempelkan dan kirim ke dia ya 💌\n\n" + pesan);
+            }).catch(() => {
+                prompt("Salin pesan ini secara manual:", pesan);
+            });
+        }
+        
+        // Initialize
+        startBtn.addEventListener('click', () => {
+            startGame();
+        });
+        
+        sendBtn.addEventListener('click', openModal);
+        confirmSendBtn.addEventListener('click', sendResult);
+        closeModalBtn.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+        
+        setupCanvasEvents();
+        drawStaticScene();
+    })();
+</script>
+</body>
+</html>
